@@ -250,3 +250,19 @@ streams it. `lib/storage.ts#readStoredFile` reads all three historical URL shape
 the public one serves one legacy test entry — fold their cleanup into ACTION 3.
 `.env.local` is intentionally trimmed to Gemini-only so local dev stays isolated
 (PGlite + disk); `npx vercel env pull .env.local` re-attaches prod services.
+
+## DONE 2026-07-19 (evening): Atelier redesign + PDF export shipped
+
+- Full monochrome luxury restyle per DESIGN.md ("Atelier"): bone/ink OKLCH tokens
+  (legacy token names aliased in globals.css), Cormorant Garamond + Marck Script
+  (both Cyrillic), micro-caps label system (.label-caps), waveform brand mark
+  (components/WaveMark.tsx), no emoji anywhere, AI prompt enforces quiet voice.
+- ACTION 4 (PDF export) is DONE: lib/pdf.tsx + app/api/export (21x21cm square,
+  cover + one page per entry, wrap={false}, fonts in public/fonts). Delivery is
+  direct download from the album ("export as pdf" button). Email/WeTransfer
+  delivery intentionally NOT built: WeTransfer has no usable public API and email
+  attachments cap ~40MB; revisit only if downloads prove unwieldy.
+- Sharing options proposed to owner (view-only album link vs co-editor invites vs
+  plain app link); awaiting decision. Invite-code system was removed earlier the
+  same day; view-only share link is the leading candidate (ACTION for later:
+  share_tokens table + /shared/[token] read-only book page, revocable).
