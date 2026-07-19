@@ -6,7 +6,7 @@ import type { Photo } from "@/lib/types";
 export default function PhotoUploader({
   entryId,
   onAdded,
-  label = "Add a photo 📷",
+  label = "add a photo",
 }: {
   entryId: string;
   onAdded: (photos: Photo[]) => void;
@@ -53,11 +53,11 @@ export default function PhotoUploader({
       <button
         onClick={() => inputRef.current?.click()}
         disabled={busy}
-        className="rounded-full bg-sage px-4 py-2 text-sm font-medium text-white shadow active:scale-95 transition disabled:opacity-60"
+        className="label-caps text-ink underline underline-offset-4 disabled:opacity-40"
       >
-        {busy ? "Uploading…" : label}
+        {busy ? "uploading…" : label}
       </button>
-      {error && <span className="ml-2 text-xs text-apricot-deep">{error}</span>}
+      {error && <span className="ml-2 text-xs text-umber">{error}</span>}
     </span>
   );
 }

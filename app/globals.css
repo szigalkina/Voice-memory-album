@@ -1,86 +1,74 @@
 @import "tailwindcss";
 
+/* ————— Atelier design system (see DESIGN.md) —————
+   Monochrome interface: bone canvas + warm ink. The baby's photos are the
+   only color. Legacy token names below are ALIASES kept so older class
+   names keep compiling; new code should use bone/ink/umber names. */
 @theme {
-  --color-milk: #faf6f0;
-  --color-cream: #f3ecdf;
-  --color-ink: #3d2c3c;
-  --color-ink-soft: #6f5c6e;
-  --color-apricot: #f49e6d;
-  --color-apricot-deep: #e0855a;
-  --color-sage: #9bb49a;
-  --color-sage-deep: #7a9679;
-  --color-blush: #f6d8c8;
+  --color-bone: oklch(95.5% 0.006 84);
+  --color-paper: oklch(97.5% 0.004 84);
+  --color-ink: oklch(20% 0.01 60);
+  --color-ink-soft: oklch(45% 0.012 60);
+  --color-umber: oklch(42% 0.1 30);
+  --color-hairline: oklch(20% 0.01 60 / 14%);
 
-  --font-display: var(--font-fraunces), Georgia, serif;
+  /* legacy aliases (Atelier values) */
+  --color-milk: var(--color-bone);
+  --color-cream: oklch(87% 0.008 84);
+  --color-apricot: var(--color-ink);
+  --color-apricot-deep: var(--color-umber);
+  --color-sage: var(--color-ink-soft);
+  --color-sage-deep: var(--color-ink);
+  --color-blush: oklch(92% 0.012 60);
+
+  --font-display: var(--font-cormorant), Georgia, serif;
   --font-body: var(--font-outfit), system-ui, sans-serif;
-  --font-hand: var(--font-caveat), "Segoe Script", cursive;
-
-  --color-paper: #fffdf7;
+  --font-hand: var(--font-marck), "Segoe Script", cursive;
 }
 
 body {
-  background: var(--color-milk);
+  background: var(--color-bone);
   color: var(--color-ink);
   font-family: var(--font-body);
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Soft atmosphere behind everything */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(244, 158, 109, 0.1), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(155, 180, 154, 0.1), transparent);
+/* Micro-caps label system — the one deliberate kicker (dates, months, nav) */
+.label-caps {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .fade-up {
-  animation: fade-up 0.5s ease-out both;
+  animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-@keyframes pulse-ring {
-  0% { box-shadow: 0 0 0 0 rgba(244, 158, 109, 0.45); }
-  70% { box-shadow: 0 0 0 26px rgba(244, 158, 109, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(244, 158, 109, 0); }
+/* Recording: slow breathing, not pulsing */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 oklch(20% 0.01 60 / 18%); }
+  50% { transform: scale(1.03); box-shadow: 0 0 0 14px oklch(20% 0.01 60 / 0%); }
 }
 
-.recording-pulse {
-  animation: pulse-ring 1.6s ease-out infinite;
+.recording-breathe {
+  animation: breathe 2.4s ease-in-out infinite;
 }
 
-/* Milestone celebration: little sparks flying out from the badge */
-@keyframes spark-fly {
-  0% { transform: translate(0, 0) scale(0.4); opacity: 1; }
-  100% {
-    transform: translate(calc(cos(var(--angle)) * 64px), calc(sin(var(--angle)) * 64px)) scale(1.1);
-    opacity: 0;
-  }
+/* Milestone: hairlines bloom outward once — quiet, no particles */
+@keyframes hairline-bloom {
+  from { transform: scaleX(0.15); opacity: 0; }
+  to { transform: scaleX(1); opacity: 1; }
 }
 
-.spark {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  pointer-events: none;
-  animation: spark-fly 1.1s ease-out both;
-}
-
-@keyframes celebrate-pop {
-  0% { transform: scale(1); }
-  35% { transform: scale(1.18) rotate(-2deg); }
-  100% { transform: scale(1); }
-}
-
-.celebrate-pop {
-  animation: celebrate-pop 0.7s ease-out both;
+.hairline-bloom {
+  animation: hairline-bloom 1.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* Book view: hide the horizontal scrollbar, keep swipe */
@@ -90,4 +78,18 @@ body::before {
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up,
+  .hairline-bloom {
+    animation: none;
+  }
+  .recording-breathe {
+    animation: none;
+    box-shadow: 0 0 0 4px oklch(20% 0.01 60 / 18%);
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
 }

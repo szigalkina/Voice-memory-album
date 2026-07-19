@@ -6,11 +6,12 @@ import { monthNumber } from "@/lib/months";
 import Recorder from "./Recorder";
 import EntryCard from "./EntryCard";
 import EditEntrySheet from "./EditEntrySheet";
+import WaveMark from "./WaveMark";
 
 function ageLabel(birthdate: string): string {
   const months = monthNumber(birthdate, new Date()) - 1;
   if (months < 1) return "brand new";
-  if (months === 1) return "1 month old";
+  if (months === 1) return "one month old";
   return `${months} months old`;
 }
 
@@ -41,10 +42,10 @@ export default function JournalClient({ baby }: { baby: Baby }) {
       setEntries((prev) => [data.entry, ...(prev ?? [])]);
       if (data.entry.isMilestone && data.entry.status === "ready") {
         setCelebrateId(data.entry.id);
-        setTimeout(() => setCelebrateId(null), 1600);
+        setTimeout(() => setCelebrateId(null), 1800);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong — try again?");
+      setError(e instanceof Error ? e.message : "Something went wrong, try again?");
     } finally {
       setUploading(false);
     }
@@ -59,39 +60,41 @@ export default function JournalClient({ baby }: { baby: Baby }) {
   }, []);
 
   return (
-    <main className="relative z-10 mx-auto w-full max-w-md flex-1 px-4 pb-32">
-      <header className="flex items-center justify-between pt-6 pb-2">
+    <main className="relative z-10 mx-auto w-full max-w-md flex-1 px-5 pb-32">
+      <header className="flex items-end justify-between pt-8 pb-2">
         <div>
-          <h1 className="font-display text-2xl font-semibold">
+          <p className="label-caps text-ink-soft">the journal of</p>
+          <h1 className="font-display italic text-[34px] leading-tight -mt-0.5">
             {baby.name}
-            <span className="text-ink-soft font-normal">&rsquo;s journal</span>
           </h1>
-          <p className="text-xs text-ink-soft mt-0.5">{ageLabel(baby.birthdate)}</p>
+          <p className="label-caps text-ink-soft mt-1">{ageLabel(baby.birthdate)}</p>
         </div>
         <form action="/api/auth/signout" method="post">
-          <button className="text-xs text-ink-soft underline underline-offset-2">
-            Sign out
+          <button className="label-caps text-ink-soft underline underline-offset-4 pb-1">
+            sign out
           </button>
         </form>
       </header>
 
-      <section className="py-6">
+      <section className="py-8">
         <Recorder onRecorded={handleRecorded} uploading={uploading} />
         {error && (
-          <p className="mt-3 text-center text-sm rounded-2xl bg-blush px-4 py-3">{error}</p>
+          <p className="mt-4 text-center text-sm text-umber border border-hairline rounded-[2px] px-4 py-3">
+            {error}
+          </p>
         )}
       </section>
 
       <section className="space-y-4">
         {entries === null ? (
-          <p className="text-center text-sm text-ink-soft py-8">Loading…</p>
+          <p className="text-center text-sm text-ink-soft py-8">loading…</p>
         ) : entries.length === 0 ? (
-          <div className="text-center py-8 fade-up">
-            <p className="text-3xl mb-2">🌱</p>
-            <p className="text-ink-soft text-sm leading-relaxed">
-              No memories yet.
+          <div className="text-center py-10 fade-up">
+            <WaveMark className="mb-5" />
+            <p className="font-display italic text-[22px] text-ink-soft leading-snug">
+              no memories yet.
               <br />
-              Tap the mic and tell the first one.
+              tap the circle and tell the first one.
             </p>
           </div>
         ) : (

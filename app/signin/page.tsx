@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import WaveMark from "@/components/WaveMark";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -10,6 +11,9 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const field =
+    "w-full rounded-[2px] border border-hairline bg-paper px-5 py-4 text-base outline-none focus:border-ink transition-colors";
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,51 +30,42 @@ export default function SignInPage() {
       router.push("/");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong — try again?");
+      setError(err instanceof Error ? err.message : "Something went wrong, try again?");
       setBusy(false);
     }
   }
 
+  const tab = (m: "login" | "signup", text: string) => (
+    <button
+      type="button"
+      onClick={() => {
+        setMode(m);
+        setError(null);
+      }}
+      className={`label-caps pb-1.5 transition-colors ${
+        mode === m ? "text-ink border-b border-ink" : "text-ink-soft border-b border-transparent"
+      }`}
+    >
+      {text}
+    </button>
+  );
+
   return (
     <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm fade-up">
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-4">🎙️</div>
-          <h1 className="font-display text-4xl font-semibold tracking-tight">
+        <div className="text-center mb-10">
+          <WaveMark className="mb-6" />
+          <h1 className="font-display text-[38px] font-medium leading-tight tracking-tight">
             Voice Baby Album
           </h1>
-          <p className="mt-3 text-ink-soft leading-relaxed">
-            Your baby&rsquo;s first year,
-            <br />
-            <em className="font-display">told in your own voice.</em>
+          <p className="mt-2 font-display italic text-[19px] text-ink-soft">
+            your baby&rsquo;s first year, told in your own voice
           </p>
         </div>
 
-        <div className="mb-4 flex rounded-full bg-white/80 border border-cream p-1 text-sm font-medium">
-          <button
-            type="button"
-            onClick={() => {
-              setMode("login");
-              setError(null);
-            }}
-            className={`flex-1 rounded-full py-2 transition ${
-              mode === "login" ? "bg-apricot text-white shadow" : "text-ink-soft"
-            }`}
-          >
-            Sign in
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMode("signup");
-              setError(null);
-            }}
-            className={`flex-1 rounded-full py-2 transition ${
-              mode === "signup" ? "bg-apricot text-white shadow" : "text-ink-soft"
-            }`}
-          >
-            Create account
-          </button>
+        <div className="mb-7 flex justify-center gap-8">
+          {tab("login", "sign in")}
+          {tab("signup", "create account")}
         </div>
 
         <form onSubmit={submit} className="space-y-3">
@@ -81,7 +76,7 @@ export default function SignInPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full rounded-2xl border border-cream bg-white/80 px-5 py-4 text-base outline-none focus:border-apricot focus:ring-2 focus:ring-apricot/30"
+            className={field}
           />
           <input
             type="password"
@@ -90,17 +85,17 @@ export default function SignInPage() {
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder={mode === "signup" ? "Password (8+ characters)" : "Password"}
-            className="w-full rounded-2xl border border-cream bg-white/80 px-5 py-4 text-base outline-none focus:border-apricot focus:ring-2 focus:ring-apricot/30"
+            placeholder={mode === "signup" ? "password (8+ characters)" : "password"}
+            className={field}
           />
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-2xl bg-apricot px-5 py-4 text-white text-base font-semibold shadow-md active:scale-[0.98] transition disabled:opacity-60"
+            className="w-full bg-ink text-bone label-caps py-4.5 rounded-[2px] active:scale-[0.99] transition disabled:opacity-40 py-4"
           >
-            {busy ? "One moment…" : mode === "login" ? "Sign in" : "Create account"}
+            {busy ? "one moment…" : mode === "login" ? "sign in" : "create account"}
           </button>
-          {error && <p className="text-sm text-center text-apricot-deep">{error}</p>}
+          {error && <p className="text-sm text-center text-umber">{error}</p>}
         </form>
       </div>
     </main>

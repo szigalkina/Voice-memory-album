@@ -12,6 +12,7 @@
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",
     "@neondatabase/serverless": "^1.1.0",
+    "@react-pdf/renderer": "^4.5.1",
     "@vercel/blob": "^2.6.1",
     "drizzle-orm": "^0.45.2",
     "jose": "^6.2.3",

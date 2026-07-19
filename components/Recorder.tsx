@@ -5,12 +5,12 @@ import { useEffect, useRef, useState } from "react";
 type RecorderState = "idle" | "recording" | "denied" | "unsupported";
 
 const PROMPTS = [
-  "Tap and tell today's little story",
-  "What made you both smile today?",
-  "Any tiny firsts to remember?",
-  "What did those little hands discover?",
-  "One moment you never want to forget?",
-  "What sound did you hear today — a giggle, a babble?",
+  "tap and tell today's little story",
+  "what made you both smile today?",
+  "any tiny firsts to remember?",
+  "what did those little hands discover?",
+  "one moment you never want to forget?",
+  "what sound did you hear today, a giggle, a babble?",
 ];
 
 const BAR_COUNT = 9;
@@ -50,7 +50,6 @@ export default function Recorder({
   }, []);
 
   function pickMime(): string {
-    // Safari records audio/mp4; Chrome/Firefox do webm/opus.
     for (const m of ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"]) {
       if (MediaRecorder.isTypeSupported(m)) return m;
     }
@@ -58,7 +57,6 @@ export default function Recorder({
   }
 
   function startMeter(stream: MediaStream) {
-    // Live waveform is a nice-to-have — never let it break recording.
     try {
       const Ctx =
         window.AudioContext ??
@@ -76,9 +74,8 @@ export default function Recorder({
         analyser.getByteFrequencyData(data);
         const next: number[] = [];
         for (let i = 0; i < BAR_COUNT; i++) {
-          // Sample low-to-mid voice frequencies across the bins.
           const v = data[2 + i * 2] ?? 0;
-          next.push(4 + Math.round((v / 255) * 30));
+          next.push(4 + Math.round((v / 255) * 28));
         }
         setLevels(next);
         rafRef.current = requestAnimationFrame(tick);
@@ -136,63 +133,69 @@ export default function Recorder({
 
   if (state === "unsupported") {
     return (
-      <p className="text-center text-sm text-ink-soft rounded-2xl bg-blush px-4 py-3">
-        This browser can&rsquo;t record audio — try Safari or Chrome on your phone.
+      <p className="text-center text-sm text-ink-soft border border-hairline rounded-[2px] px-4 py-3">
+        this browser can&rsquo;t record audio; try Safari or Chrome on your phone
       </p>
     );
   }
 
+  // Idle glyph: the waveform mark in bone, on the ink circle
+  const idleBars = [10, 18, 26, 18, 10];
+
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex flex-col items-center gap-4">
       {state === "recording" ? (
         <button
           onClick={stop}
           aria-label="Stop recording"
-          className="recording-pulse h-28 w-28 rounded-full bg-apricot-deep text-white shadow-xl flex items-center justify-center active:scale-95 transition"
+          className="recording-breathe h-[88px] w-[88px] rounded-full bg-ink flex items-center justify-center active:scale-95 transition"
         >
-          <span className="h-8 w-8 rounded-lg bg-white" />
+          <span className="h-6 w-6 rounded-[1px] bg-bone" />
         </button>
       ) : (
         <button
           onClick={start}
           disabled={uploading}
           aria-label="Start recording"
-          className="group h-28 w-28 rounded-full bg-apricot text-white shadow-xl flex items-center justify-center text-5xl transition active:scale-95 hover:scale-105 hover:shadow-2xl disabled:opacity-50"
+          className="h-[88px] w-[88px] rounded-full bg-ink flex items-center justify-center transition active:scale-95 hover:scale-[1.03] disabled:opacity-40"
         >
           {uploading ? (
-            <span className="h-9 w-9 rounded-full border-[3px] border-white/40 border-t-white animate-spin" />
+            <span className="h-8 w-8 rounded-full border border-bone/30 border-t-bone animate-spin" />
           ) : (
-            <span className="transition group-hover:-rotate-6">🎙️</span>
+            <span className="flex items-end gap-[4px]" aria-hidden>
+              {idleBars.map((h, i) => (
+                <span key={i} className="w-[2px] bg-bone" style={{ height: `${h}px` }} />
+              ))}
+            </span>
           )}
         </button>
       )}
 
-      {/* Live waveform while recording */}
-      <div className="h-10 flex items-center gap-1" aria-hidden>
+      <div className="h-10 flex items-center gap-[5px]" aria-hidden>
         {state === "recording" ? (
           levels.map((h, i) => (
             <span
               key={i}
-              className="w-1.5 rounded-full bg-apricot transition-[height] duration-75"
+              className="w-px bg-ink transition-[height] duration-75"
               style={{ height: `${h}px` }}
             />
           ))
         ) : (
-          <span className="text-sm text-ink-soft text-center px-4">
-            {uploading ? "Listening to your note…" : PROMPTS[promptIdx]}
+          <span className="font-display italic text-[19px] text-ink-soft text-center px-6">
+            {uploading ? "listening to your note…" : PROMPTS[promptIdx]}
           </span>
         )}
       </div>
 
       {state === "recording" && (
-        <p className="text-sm font-medium text-apricot-deep -mt-2">
+        <p className="label-caps text-ink -mt-2">
           {mm}:{ss} · tap to finish
         </p>
       )}
 
       {state === "denied" && (
-        <p className="text-center text-sm rounded-2xl bg-blush px-4 py-3 max-w-xs">
-          We need microphone access to record. Enable it for this site in your browser
+        <p className="text-center text-sm border border-hairline rounded-[2px] px-4 py-3 max-w-xs text-ink-soft">
+          we need microphone access to record. enable it for this site in your browser
           settings and try again.
         </p>
       )}

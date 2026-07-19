@@ -6,10 +6,23 @@ import type { Entry, Photo } from "@/lib/types";
 import PhotoUploader from "./PhotoUploader";
 
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { month: "long", day: "numeric" });
+  return new Date(iso)
+    .toLocaleDateString("en-GB", { day: "numeric", month: "long" });
 }
 
-const SPARKS = ["✨", "🎉", "⭐", "✨", "💛", "🎈"];
+function MilestoneMark({ celebrate }: { celebrate: boolean }) {
+  return (
+    <span className="mt-3 flex items-center justify-start gap-3">
+      <span
+        className={`h-px w-6 bg-ink/40 origin-right ${celebrate ? "hairline-bloom" : ""}`}
+      />
+      <span className="label-caps text-ink">milestone</span>
+      <span
+        className={`h-px w-6 bg-ink/40 origin-left ${celebrate ? "hairline-bloom" : ""}`}
+      />
+    </span>
+  );
+}
 
 export default function EntryCard({
   entry,
@@ -61,31 +74,34 @@ export default function EntryCard({
 
   if (entry.status === "processing") {
     return (
-      <div className="fade-up rounded-3xl bg-white/80 border border-cream p-5 shadow-sm flex items-center gap-4">
-        <span className="h-6 w-6 shrink-0 rounded-full border-[3px] border-apricot/30 border-t-apricot animate-spin" />
-        <p className="text-ink-soft">Listening to your note…</p>
+      <div className="fade-up border border-hairline bg-paper rounded-[3px] p-5 flex items-center gap-4">
+        <span className="h-5 w-5 shrink-0 rounded-full border border-ink/20 border-t-ink animate-spin" />
+        <p className="text-ink-soft text-sm">listening to your note…</p>
       </div>
     );
   }
 
   if (entry.status === "failed") {
     return (
-      <div className="fade-up rounded-3xl bg-white/80 border border-cream p-5 shadow-sm">
-        <p className="font-medium">Couldn&rsquo;t process this note</p>
+      <div className="fade-up border border-hairline bg-paper rounded-[3px] p-5">
+        <p className="font-medium text-sm">Couldn&rsquo;t process this note</p>
         <p className="text-sm text-ink-soft mt-1">
-          Your recording is safe — we just couldn&rsquo;t understand it right now.
+          Your recording is safe; we just couldn&rsquo;t understand it right now.
         </p>
         <audio controls src={entry.audioUrl} className="mt-3 w-full h-10" preload="none" />
-        <div className="mt-3 flex gap-2">
+        <div className="mt-4 flex gap-4 items-center">
           <button
             onClick={retry}
             disabled={busy}
-            className="rounded-full bg-apricot px-4 py-2 text-sm font-medium text-white shadow active:scale-95 transition disabled:opacity-60"
+            className="bg-ink text-bone label-caps px-5 py-3 rounded-[2px] active:scale-[0.98] transition disabled:opacity-40"
           >
-            {busy ? "Retrying…" : "Try again"}
+            {busy ? "retrying…" : "try again"}
           </button>
-          <button onClick={remove} className="rounded-full px-4 py-2 text-sm text-ink-soft">
-            Delete
+          <button
+            onClick={remove}
+            className="label-caps text-ink-soft underline underline-offset-4"
+          >
+            delete
           </button>
         </div>
       </div>
@@ -93,13 +109,11 @@ export default function EntryCard({
   }
 
   return (
-    <article className="fade-up rounded-3xl bg-white/80 border border-cream p-5 shadow-sm relative z-0">
+    <article className="fade-up border border-hairline bg-paper rounded-[3px] p-6 relative z-0">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs uppercase tracking-wider text-ink-soft">
-            {fmtDate(entry.recordedAt)}
-          </p>
-          <h3 className="mt-0.5 font-display text-2xl font-semibold leading-snug">
+          <p className="label-caps text-ink-soft">{fmtDate(entry.recordedAt)}</p>
+          <h3 className="mt-1.5 font-display text-[26px] font-medium leading-tight">
             {entry.title}
           </h3>
         </div>
@@ -107,61 +121,40 @@ export default function EntryCard({
           <button
             aria-label="Entry menu"
             onClick={() => setMenuOpen((v) => !v)}
-            className="h-9 w-9 rounded-full text-ink-soft hover:bg-cream flex items-center justify-center text-xl"
+            className="h-9 w-9 text-ink-soft hover:text-ink flex items-center justify-center text-xl"
           >
             ⋯
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-10 z-10 w-36 rounded-2xl bg-white border border-cream shadow-lg overflow-hidden text-sm">
+            <div className="absolute right-0 top-9 z-10 w-32 bg-paper border border-hairline rounded-[2px] overflow-hidden text-sm shadow-sm">
               <button
-                className="block w-full px-4 py-2.5 text-left hover:bg-milk"
+                className="block w-full px-4 py-2.5 text-left hover:bg-bone"
                 onClick={() => {
                   setMenuOpen(false);
                   onEdit(entry);
                 }}
               >
-                ✏️ Edit
+                Edit
               </button>
               <button
-                className="block w-full px-4 py-2.5 text-left text-apricot-deep hover:bg-milk"
+                className="block w-full px-4 py-2.5 text-left text-umber hover:bg-bone"
                 onClick={() => {
                   setMenuOpen(false);
                   remove();
                 }}
               >
-                🗑 Delete
+                Delete
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {entry.isMilestone && (
-        <span
-          className={`relative mt-2 inline-block rounded-full bg-sage/20 text-sage-deep px-3 py-1 text-xs font-semibold ${
-            celebrate ? "celebrate-pop" : ""
-          }`}
-        >
-          ✨ milestone
-          {celebrate &&
-            SPARKS.map((s, i) => (
-              <span
-                key={i}
-                className="spark text-lg"
-                style={{
-                  ["--angle" as string]: `${(360 / SPARKS.length) * i - 90}deg`,
-                  animationDelay: `${i * 40}ms`,
-                }}
-              >
-                {s}
-              </span>
-            ))}
-        </span>
-      )}
+      {entry.isMilestone && <MilestoneMark celebrate={celebrate} />}
 
-      <p className="mt-2 text-[15px] leading-relaxed">{entry.summary}</p>
+      <p className="mt-3 text-[15px] leading-relaxed text-ink/90">{entry.summary}</p>
       {entry.quote && (
-        <blockquote className="mt-3 border-l-[3px] border-apricot/50 pl-3 font-display italic text-ink-soft">
+        <blockquote className="mt-3 font-hand text-[19px] text-ink-soft">
           “{entry.quote}”
         </blockquote>
       )}
@@ -178,37 +171,37 @@ export default function EntryCard({
               width={400}
               height={400}
               unoptimized
-              className="aspect-square w-full rounded-2xl object-cover"
+              className="aspect-square w-full rounded-[2px] border border-hairline object-cover"
             />
           ))}
         </div>
       )}
 
-      <div className="mt-4 flex items-center justify-between gap-3 border-t border-cream pt-3">
+      <div className="mt-5 flex items-center justify-between gap-3 border-t border-hairline pt-4">
         {entry.photos.length === 0 && entry.photoPrompt ? (
-          <div className="flex items-center gap-2 min-w-0">
-            <p className="text-xs text-ink-soft truncate">{entry.photoPrompt}</p>
-          </div>
+          <p className="text-xs text-ink-soft truncate italic font-display text-[15px]">
+            {entry.photoPrompt}
+          </p>
         ) : (
           <span />
         )}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-4 shrink-0">
           <PhotoUploader
             entryId={entry.id}
-            label={entry.photos.length ? "＋ 📷" : "Add a photo 📷"}
+            label={entry.photos.length ? "add" : "add a photo"}
             onAdded={(newPhotos: Photo[]) =>
               onChange({ ...entry, photos: [...entry.photos, ...newPhotos] })
             }
           />
-          <label className="flex items-center gap-1.5 text-xs text-ink-soft select-none">
+          <label className="flex items-center gap-2 label-caps text-ink-soft select-none">
             <input
               type="checkbox"
               checked={entry.inAlbum}
               disabled={busy}
               onChange={(e) => patch({ inAlbum: e.target.checked })}
-              className="h-4 w-4 accent-[#f49e6d]"
+              className="h-3.5 w-3.5 accent-[#2b2622]"
             />
-            In album
+            in album
           </label>
         </div>
       </div>

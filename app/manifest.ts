@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Your baby's first year, told in your own voice.",
     start_url: "/",
     display: "standalone",
-    background_color: "#faf6f0",
-    theme_color: "#faf6f0",
+    background_color: "#f2efe9",
+    theme_color: "#f2efe9",
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icon-512.png", sizes: "512x512", type: "image/png" },

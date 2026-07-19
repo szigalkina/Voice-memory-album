@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Caveat, Fraunces, Outfit } from "next/font/google";
+import { Cormorant_Garamond, Marck_Script, Outfit } from "next/font/google";
 import "./globals.css";
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin", "latin-ext"],
-  axes: ["SOFT", "opsz"],
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
+  subsets: ["latin", "cyrillic"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
 });
 
 const outfit = Outfit({
@@ -13,9 +14,10 @@ const outfit = Outfit({
   subsets: ["latin"],
 });
 
-const caveat = Caveat({
-  variable: "--font-caveat",
+const marck = Marck_Script({
+  variable: "--font-marck",
   subsets: ["latin", "cyrillic"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -26,7 +28,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#faf6f0",
+  themeColor: "#f2efe9",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -40,7 +42,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${outfit.variable} ${caveat.variable} h-full antialiased`}
+      className={`${cormorant.variable} ${outfit.variable} ${marck.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col relative">{children}</body>
     </html>

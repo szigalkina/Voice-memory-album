@@ -38,12 +38,14 @@ export function mockAnalysis(): EntryAnalysis {
     quote: "laughed out loud for the very first time",
     is_milestone: true,
     milestone_type: "first_laugh",
-    photo_prompt: "Did you catch that giggle on camera? Add a photo of this moment!",
+    photo_prompt: "did you catch that giggle on camera? add a photo of this moment",
   };
 }
 
 const PROMPT = `You are the gentle assistant inside a baby-journal app. A parent recorded a voice note about their baby. Listen to the audio and respond ONLY with JSON matching the schema. Rules:
 - Write title, summary, quote and photo_prompt in the SAME LANGUAGE the parent spoke.
+- Voice: quiet, tender, editorial. Never use exclamation marks, emoji, or emphatic
+  words like "amazing"/"incredible". Understatement over enthusiasm.
 - transcript: faithful transcription of the audio.
 - title: short warm title (max 6 words).
 - summary: 1-2 sentences, warm but not saccharine, third person about the baby.
