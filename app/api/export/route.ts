@@ -8,9 +8,12 @@ import type { Entry } from "@/lib/types";
 
 export const maxDuration = 120; // rendering + fetching photos can take a while
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const { baby, db } = await requireBaby();
+    const partParam = new URL(req.url).searchParams.get("part");
+    const part: "all" | "interior" | "cover" =
+      partParam === "interior" || partParam === "cover" ? partParam : "all";
     const list = await db
       .select()
       .from(entries)
@@ -38,8 +41,9 @@ export async function GET() {
     const pages = buildBookPages(withPhotos, baby.birthdate);
 
     // Load photo bytes; react-pdf renders JPEG/PNG (skip other formats).
+    // The cover needs no images at all.
     const pdfPages = [];
-    for (const page of pages) {
+    for (const page of part === "cover" ? [] : pages) {
       const images: string[] = [];
       for (const p of page.photos) {
         const file = await readStoredFile(p.blobUrl);
@@ -54,11 +58,14 @@ export async function GET() {
     const { AlbumPdf } = await import("@/lib/pdf");
     const doc = React.createElement(AlbumPdf, {
       babyName: baby.name,
-      pages: pdfPages,
+      pages: part === "cover" ? [] : pdfPages,
+      part,
     }) as React.ReactElement<import("@react-pdf/renderer").DocumentProps>;
     const buffer = await renderToBuffer(doc);
 
-    const filename = `${baby.name.toLowerCase().replace(/[^a-zа-я0-9]+/gi, "-")}-album.pdf`;
+    const slug = baby.name.toLowerCase().replace(/[^a-zа-я0-9]+/gi, "-");
+    const suffix = part === "all" ? "album" : part;
+    const filename = `${slug}-${suffix}.pdf`;
     return new Response(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",

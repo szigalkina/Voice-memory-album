@@ -61,22 +61,30 @@ function PhotoBlock({ images }: { images: string[] }) {
   );
 }
 
+export type PdfPart = "all" | "interior" | "cover";
+
 export function AlbumPdf({
   babyName,
   pages,
+  part = "all",
 }: {
   babyName: string;
   pages: PdfPageData[];
+  part?: PdfPart;
 }) {
+  const withCover = part !== "interior";
+  const withPages = part !== "cover";
   return (
     <Document title={`${babyName} — Voice Baby Album`}>
-      {/* Cover */}
-      <Page size={[PAGE, PAGE]} style={[s.page, { justifyContent: "center" }]} wrap={false}>
-        <Text style={[s.month, { marginBottom: 18 }]}>THE FIRST YEAR OF</Text>
-        <Text style={[s.titleBig, { fontSize: 44 }]}>{babyName}</Text>
-      </Page>
+      {withCover && (
+        <Page size={[PAGE, PAGE]} style={[s.page, { justifyContent: "center" }]} wrap={false}>
+          <Text style={[s.month, { marginBottom: 18 }]}>THE FIRST YEAR OF</Text>
+          <Text style={[s.titleBig, { fontSize: 44 }]}>{babyName}</Text>
+        </Page>
+      )}
+      {withPages &&
 
-      {pages.map(({ page, images }, i) => {
+      pages.map(({ page, images }, i) => {
         const { entry } = page;
         const numberStyle = [
           s.pageNo,

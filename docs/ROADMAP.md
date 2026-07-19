@@ -113,6 +113,11 @@ uploads it to Albelli/any print service themselves. No print API integration.
 
 ## ACTION 5 — Ship to the App Store (and optionally Google Play)
 
+OWNER DECISION 2026-07-19 (later same day): NO native app — the mobile web PWA is
+the product. ACTION 5 is CANCELED (kept below for reference only; do not execute
+unless the owner changes their mind). Google Play $25 never needed.
+
+Original plan follows:
 Owner decision 2026-07-19: YES to app stores. Apple Developer membership already
 active. Xcode 26.6 installed on the build Mac. Strategy: Capacitor shell over the
 production site (no rewrite). Do the phases IN ORDER.
@@ -266,3 +271,11 @@ the public one serves one legacy test entry — fold their cleanup into ACTION 3
   plain app link); awaiting decision. Invite-code system was removed earlier the
   same day; view-only share link is the leading candidate (ACTION for later:
   share_tokens table + /shared/[token] read-only book page, revocable).
+
+## DONE 2026-07-19 (late): Split PDF export for print services
+`/api/export?part=interior` (pages only) and `?part=cover` (cover only) plus the
+default full file; album UI has "pages only" / "cover only" links. Rationale:
+PDF-accepting printers (Blurb PDF-to-Book, PrestoPhoto, Mixam) take the interior
+file and provide their own cover editors (covers are wraparound + spine, a
+different artifact). Albelli-style consumer editors don't accept PDFs at all.
+No direct printing-service API integration — deliberate (none worth coupling to).

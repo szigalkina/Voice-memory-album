@@ -146,9 +146,23 @@ export default function AlbumClient({ baby }: { baby: Baby }) {
               >
                 export as pdf
               </a>
-              <p className="text-[11px] text-ink-soft mt-2.5 px-8 leading-relaxed">
-                a print-ready file of every album page — save it, share it, or upload it
-                to any photo-book printer
+              <p className="mt-3 flex items-center justify-center gap-5">
+                <a
+                  href="/api/export?part=interior"
+                  className="label-caps !text-[9px] text-ink-soft underline underline-offset-4"
+                >
+                  pages only
+                </a>
+                <a
+                  href="/api/export?part=cover"
+                  className="label-caps !text-[9px] text-ink-soft underline underline-offset-4"
+                >
+                  cover only
+                </a>
+              </p>
+              <p className="text-[11px] text-ink-soft mt-3 px-8 leading-relaxed">
+                print services that accept PDFs (Blurb, PrestoPhoto, Mixam…) take the
+                pages file and let you design the cover in their own editor
               </p>
             </div>
           </div>
