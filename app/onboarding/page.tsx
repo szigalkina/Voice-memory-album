@@ -7,8 +7,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [birthdate, setBirthdate] = useState("");
-  const [code, setCode] = useState("");
-  const [state, setState] = useState<"idle" | "saving" | "joining">("idle");
+  const [state, setState] = useState<"idle" | "saving">("idle");
   const [error, setError] = useState<string | null>(null);
 
   async function createAlbum(e: React.FormEvent) {
@@ -26,25 +25,6 @@ export default function OnboardingPage() {
     } else {
       const data = await res.json().catch(() => ({}));
       setError(data.error ?? "Couldn't save — check the fields and try again.");
-      setState("idle");
-    }
-  }
-
-  async function joinAlbum(e: React.FormEvent) {
-    e.preventDefault();
-    setState("joining");
-    setError(null);
-    const res = await fetch("/api/invite/redeem", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code }),
-    });
-    if (res.ok) {
-      router.push("/");
-      router.refresh();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "That code didn't work — check it and try again.");
       setState("idle");
     }
   }
@@ -83,28 +63,6 @@ export default function OnboardingPage() {
             className="mt-6 w-full rounded-2xl bg-apricot px-5 py-4 text-white font-semibold shadow-md active:scale-[0.98] transition disabled:opacity-60"
           >
             {state === "saving" ? "Saving…" : "Start the album"}
-          </button>
-        </form>
-
-        <div className="my-7 flex items-center gap-3 text-xs text-ink-soft">
-          <span className="h-px flex-1 bg-cream" />
-          or join an existing album
-          <span className="h-px flex-1 bg-cream" />
-        </div>
-
-        <form onSubmit={joinAlbum} className="flex gap-2">
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="Invite code"
-            className="flex-1 rounded-2xl border border-cream bg-white/80 px-5 py-3.5 uppercase tracking-widest outline-none focus:border-sage focus:ring-2 focus:ring-sage/30"
-          />
-          <button
-            type="submit"
-            disabled={state !== "idle" || !code.trim()}
-            className="rounded-2xl bg-sage px-5 py-3.5 text-white font-semibold shadow-md active:scale-[0.98] transition disabled:opacity-60"
-          >
-            {state === "joining" ? "…" : "Join"}
           </button>
         </form>
 

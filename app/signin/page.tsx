@@ -101,12 +101,6 @@ export default function SignInPage() {
             {busy ? "One moment…" : mode === "login" ? "Sign in" : "Create account"}
           </button>
           {error && <p className="text-sm text-center text-apricot-deep">{error}</p>}
-          {mode === "signup" && (
-            <p className="text-xs text-center text-ink-soft leading-relaxed">
-              Joining a partner&rsquo;s album? Create your account, then enter their invite
-              code on the next screen.
-            </p>
-          )}
         </form>
       </div>
     </main>

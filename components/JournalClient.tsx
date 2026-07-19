@@ -20,8 +20,6 @@ export default function JournalClient({ baby }: { baby: Baby }) {
   const [error, setError] = useState<string | null>(null);
   const [celebrateId, setCelebrateId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Entry | null>(null);
-  const [inviteCode, setInviteCode] = useState<string | null>(null);
-  const [inviteBusy, setInviteBusy] = useState(false);
 
   useEffect(() => {
     fetch("/api/entries")
@@ -60,17 +58,6 @@ export default function JournalClient({ baby }: { baby: Baby }) {
     setEntries((prev) => prev?.filter((e) => e.id !== id) ?? null);
   }, []);
 
-  async function invitePartner() {
-    setInviteBusy(true);
-    try {
-      const res = await fetch("/api/invite", { method: "POST" });
-      const data = await res.json();
-      if (res.ok) setInviteCode(data.code);
-    } finally {
-      setInviteBusy(false);
-    }
-  }
-
   return (
     <main className="relative z-10 mx-auto w-full max-w-md flex-1 px-4 pb-32">
       <header className="flex items-center justify-between pt-6 pb-2">
@@ -81,39 +68,12 @@ export default function JournalClient({ baby }: { baby: Baby }) {
           </h1>
           <p className="text-xs text-ink-soft mt-0.5">{ageLabel(baby.birthdate)}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={invitePartner}
-            disabled={inviteBusy}
-            className="text-xs text-ink-soft underline underline-offset-2 disabled:opacity-50"
-          >
-            👥 Invite
+        <form action="/api/auth/signout" method="post">
+          <button className="text-xs text-ink-soft underline underline-offset-2">
+            Sign out
           </button>
-          <form action="/api/auth/signout" method="post">
-            <button className="text-xs text-ink-soft underline underline-offset-2">
-              Sign out
-            </button>
-          </form>
-        </div>
+        </form>
       </header>
-
-      {inviteCode && (
-        <div className="fade-up mt-2 rounded-2xl bg-sage/15 border border-sage/30 px-4 py-3 text-sm">
-          <p className="font-medium">
-            Invite code: <span className="tracking-widest font-semibold">{inviteCode}</span>
-          </p>
-          <p className="text-xs text-ink-soft mt-1">
-            The other parent creates their own account, then enters this code to join{" "}
-            {baby.name}&rsquo;s album. One use per code.
-          </p>
-          <button
-            onClick={() => setInviteCode(null)}
-            className="mt-1 text-xs underline underline-offset-2 text-ink-soft"
-          >
-            Done
-          </button>
-        </div>
-      )}
 
       <section className="py-6">
         <Recorder onRecorded={handleRecorded} uploading={uploading} />

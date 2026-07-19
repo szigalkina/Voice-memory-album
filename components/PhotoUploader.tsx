@@ -40,11 +40,12 @@ export default function PhotoUploader({
 
   return (
     <span>
+      {/* No `capture` attribute: phones offer the photo gallery (with camera
+          as an option) and computers open a normal file picker. */}
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
-        capture="environment"
+        accept="image/*"
         multiple
         hidden
         onChange={(e) => upload(e.target.files)}

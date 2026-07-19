@@ -1,11 +1,13 @@
 import { and, eq } from "drizzle-orm";
 import { entries, photos } from "@/lib/schema";
 import { requireBaby } from "@/lib/guard";
+import { mediaResponse } from "@/lib/http";
 
 // Authenticated gateway to private blob storage. Only serves a file if it
-// belongs to the signed-in user's baby (as audio or photo).
+// belongs to the signed-in user's baby (as audio or photo). Supports Range
+// requests — required for audio playback in Safari.
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ blob: string }> }
 ) {
   try {
@@ -33,12 +35,12 @@ export async function GET(
     if (!res || res.statusCode !== 200 || !res.stream) {
       return new Response("Not found", { status: 404 });
     }
-    return new Response(res.stream, {
-      headers: {
-        "Content-Type": res.blob?.contentType ?? "application/octet-stream",
-        "Cache-Control": "private, max-age=3600",
-      },
-    });
+    const data = Buffer.from(await new Response(res.stream).arrayBuffer());
+    return mediaResponse(
+      data,
+      res.blob?.contentType ?? "application/octet-stream",
+      req.headers.get("range")
+    );
   } catch (e) {
     if (e instanceof Response) return e;
     return new Response("Server error", { status: 500 });
