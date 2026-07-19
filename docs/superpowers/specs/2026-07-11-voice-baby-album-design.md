@@ -1,11 +1,11 @@
-# Voice Baby Journal — Design Spec
+# Voice Baby Album — Design Spec
 
 **Date:** 2026-07-11
 **Status:** Approved by user (conversation, 2026-07-11)
 
 ## What it is
 
-A mobile-first web app (PWA) for journaling a child's first year by voice. A parent
+**Voice Baby Album** — a mobile-first web app (PWA) for journaling a child's first year by voice. A parent
 records short voice notes on their phone; AI transcribes and summarizes each note,
 detects milestones, and prompts for photos. The app builds a living album — a
 scrollable timeline of the first year — automatically, starting from the very first
