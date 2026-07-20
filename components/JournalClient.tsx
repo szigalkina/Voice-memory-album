@@ -22,6 +22,22 @@ export default function JournalClient({ baby }: { baby: Baby }) {
       .catch(() => setEntries([]));
   }, []);
 
+  // While any entry is processing, poll the server: if the browser dropped the
+  // upload response (Safari kills slow requests), the entry still resolves
+  // server-side and this picks the result up.
+  useEffect(() => {
+    if (!entries?.some((e) => e.status === "processing")) return;
+    const t = setTimeout(async () => {
+      try {
+        const d = await (await fetch("/api/entries")).json();
+        if (d.entries) setEntries(d.entries);
+      } catch {
+        /* next poll retries */
+      }
+    }, 15_000);
+    return () => clearTimeout(t);
+  }, [entries]);
+
   const handleRecorded = useCallback(async (blob: Blob, mimeType: string) => {
     setUploading(true);
     setError(null);
@@ -38,7 +54,19 @@ export default function JournalClient({ baby }: { baby: Baby }) {
         setTimeout(() => setCelebrateId(null), 1800);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong, try again?");
+      // A dropped connection can outlive a successful upload (Safari kills
+      // slow requests): the entry may exist server-side and still be
+      // processing. Re-pull the list before complaining.
+      const list = await fetch("/api/entries")
+        .then((r) => r.json())
+        .then((d) => (d.entries as Entry[] | undefined) ?? null)
+        .catch(() => null);
+      const newest = list?.[0];
+      if (newest && Date.now() - Date.parse(newest.recordedAt) < 2 * 60_000) {
+        setEntries(list);
+      } else {
+        setError(e instanceof Error ? e.message : "Something went wrong, try again?");
+      }
     } finally {
       setUploading(false);
     }

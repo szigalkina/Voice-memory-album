@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import type { Entry, Photo } from "@/lib/types";
+import { isStaleProcessing } from "@/lib/stale";
 import PhotoUploader from "./PhotoUploader";
 
 function fmtDate(iso: string) {
@@ -72,7 +73,11 @@ export default function EntryCard({
     }
   }
 
-  if (entry.status === "processing") {
+  // A processing entry whose function can no longer be running is dead —
+  // show the recovery card instead of an eternal spinner.
+  const stale = isStaleProcessing(entry.status, entry.recordedAt);
+
+  if (entry.status === "processing" && !stale) {
     return (
       <div className="fade-up border border-hairline bg-paper rounded-[3px] p-5 flex items-center gap-4">
         <span className="h-5 w-5 shrink-0 rounded-full border border-ink/20 border-t-ink animate-spin" />
@@ -81,7 +86,7 @@ export default function EntryCard({
     );
   }
 
-  if (entry.status === "failed") {
+  if (entry.status === "failed" || stale) {
     return (
       <div className="fade-up border border-hairline bg-paper rounded-[3px] p-5">
         <p className="font-medium text-sm">Couldn&rsquo;t process this note</p>

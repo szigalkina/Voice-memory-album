@@ -72,14 +72,59 @@ const SCHEMA = {
 // changed behavior before (gemini-flash-latest became a thinking model that
 // hangs on audio+schema requests) — hence pinned primary + fallbacks + a hard
 // per-attempt timeout so one bad model can never stall the whole request.
-const MODEL_CHAIN = [
-  process.env.GEMINI_MODEL,
-  "gemini-3-flash-preview",
-  "gemini-flash-lite-latest",
-  "gemini-flash-latest",
-].filter((m, i, a): m is string => !!m && a.indexOf(m) === i);
+// Surveyed 2026-07-20: only gemini-3-flash-preview serves this key on v1beta
+// (the -latest aliases 404 with empty bodies, most stable models are closed to
+// new keys); v1alpha gemini-3.5-flash was the one other endpoint that answered
+// at all, so it stays as a last resort.
+export interface ChainEntry {
+  model: string;
+  api: "v1beta" | "v1alpha";
+}
 
-const ATTEMPT_TIMEOUT_MS = 75_000;
+export const MODEL_CHAIN: ChainEntry[] = (
+  [
+    { model: process.env.GEMINI_MODEL ?? "", api: "v1beta" },
+    { model: "gemini-3-flash-preview", api: "v1beta" },
+    { model: "gemini-flash-lite-latest", api: "v1beta" },
+    { model: "gemini-flash-latest", api: "v1beta" },
+    { model: "gemini-3.5-flash", api: "v1alpha" },
+  ] as ChainEntry[]
+).filter(
+  (e, i, a) =>
+    e.model && a.findIndex((x) => x.model === e.model && x.api === e.api) === i
+);
+
+const ATTEMPT_TIMEOUT_MS = 45_000;
+// Attempts stop once this much time has passed, so the route (maxDuration
+// 300s) always survives to mark the entry failed instead of dying mid-chain
+// and leaving it "processing" forever.
+const TOTAL_BUDGET_MS = 200_000;
+
+export function geminiRequestBody(
+  audioB64: string,
+  mimeType: string,
+  capThinking: boolean
+) {
+  return {
+    contents: [
+      {
+        parts: [
+          { inlineData: { mimeType, data: audioB64 } },
+          { text: PROMPT },
+        ],
+      },
+    ],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: SCHEMA,
+      // Gemini 3 models default to heavy "thinking" on audio+schema requests
+      // (measured 42s for a 4-second clip on 2026-07-20; ~3s with the cap).
+      ...(capThinking
+        ? { thinkingConfig: { thinkingLevel: "low" as const } }
+        : {}),
+    },
+  };
+}
 
 // Thinking models can emit multiple parts (thoughts first) — find the JSON one.
 function extractJsonText(body: unknown): string | null {
@@ -99,35 +144,31 @@ function extractJsonText(body: unknown): string | null {
 }
 
 async function callModel(
-  model: string,
-  audio: Buffer,
-  mimeType: string
+  entry: ChainEntry,
+  audioB64: string,
+  mimeType: string,
+  timeoutMs: number,
+  capThinking = true
 ): Promise<EntryAnalysis> {
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/${entry.api}/models/${entry.model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      signal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { inlineData: { mimeType, data: audio.toString("base64") } },
-              { text: PROMPT },
-            ],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: SCHEMA,
-        },
-      }),
+      signal: AbortSignal.timeout(timeoutMs),
+      body: JSON.stringify(geminiRequestBody(audioB64, mimeType, capThinking)),
     }
   );
-  if (!res.ok) throw new Error(`Gemini ${model} error ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  if (!res.ok) {
+    const detail = (await res.text()).slice(0, 300);
+    // A model that doesn't understand thinkingConfig gets one plain retry.
+    if (capThinking && res.status === 400 && /thinking/i.test(detail)) {
+      return callModel(entry, audioB64, mimeType, timeoutMs, false);
+    }
+    throw new Error(`Gemini ${entry.model} error ${res.status}: ${detail}`);
+  }
   const text = extractJsonText(await res.json());
-  if (!text) throw new Error(`Gemini ${model} returned no parseable JSON`);
+  if (!text) throw new Error(`Gemini ${entry.model} returned no parseable JSON`);
   return parseAnalysis(JSON.parse(text));
 }
 
@@ -141,19 +182,31 @@ export async function analyzeVoiceNote(
     await new Promise((r) => setTimeout(r, 800));
     return mockAnalysis();
   }
+  const audioB64 = audio.toString("base64");
+  const deadline = Date.now() + TOTAL_BUDGET_MS;
   let lastError: unknown;
-  for (const model of MODEL_CHAIN) {
+  for (const entry of MODEL_CHAIN) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 5_000) {
+      lastError = lastError ?? new Error("AI time budget exhausted");
+      break;
+    }
     try {
-      return await callModel(model, audio, mimeType);
+      return await callModel(
+        entry,
+        audioB64,
+        mimeType,
+        Math.min(ATTEMPT_TIMEOUT_MS, remaining)
+      );
     } catch (err) {
       lastError = err;
-      console.error(`AI model ${model} failed:`, err);
+      console.error(`AI model ${entry.model} (${entry.api}) failed:`, err);
     }
   }
   const { sendOpsAlert } = await import("./alert");
   await sendOpsAlert(
     "voice note processing is failing",
-    `All models in the chain failed (${MODEL_CHAIN.join(" → ")}).\nLast error: ${String(lastError).slice(0, 500)}\n\nUsers see "Couldn't process this note" and can retry once this is fixed.`
+    `All models in the chain failed (${MODEL_CHAIN.map((e) => e.model).join(" → ")}).\nLast error: ${String(lastError).slice(0, 500)}\n\nUsers see "Couldn't process this note" and can retry once this is fixed.`
   );
   throw lastError;
 }

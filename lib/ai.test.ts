@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseAnalysis, mockAnalysis } from "./ai";
+import { parseAnalysis, mockAnalysis, geminiRequestBody, MODEL_CHAIN } from "./ai";
 
 const good = {
   transcript: "Сегодня она первый раз засмеялась!",
@@ -32,5 +32,30 @@ describe("parseAnalysis", () => {
 describe("mockAnalysis", () => {
   it("returns a valid analysis (round-trips through parseAnalysis)", () => {
     expect(() => parseAnalysis(mockAnalysis())).not.toThrow();
+  });
+});
+
+describe("geminiRequestBody", () => {
+  it("caps thinking by default (Gemini 3 models hang/crawl on audio+schema otherwise)", () => {
+    const b = geminiRequestBody("QUJD", "audio/mp4", true);
+    expect(b.generationConfig.thinkingConfig).toEqual({ thinkingLevel: "low" });
+    expect(b.generationConfig.responseMimeType).toBe("application/json");
+    expect(b.generationConfig.responseSchema).toBeTruthy();
+    expect(b.contents[0].parts[0].inlineData).toEqual({ mimeType: "audio/mp4", data: "QUJD" });
+  });
+  it("omits thinkingConfig when a model rejects it", () => {
+    const b = geminiRequestBody("QUJD", "audio/mp4", false);
+    expect(b.generationConfig.thinkingConfig).toBeUndefined();
+  });
+});
+
+describe("MODEL_CHAIN", () => {
+  it("always contains the pinned working model", () => {
+    expect(MODEL_CHAIN.some((e) => e.model === "gemini-3-flash-preview")).toBe(true);
+  });
+  it("has no empty or duplicate entries", () => {
+    expect(MODEL_CHAIN.every((e) => e.model.length > 0)).toBe(true);
+    const keys = MODEL_CHAIN.map((e) => `${e.api}/${e.model}`);
+    expect(new Set(keys).size).toBe(keys.length);
   });
 });

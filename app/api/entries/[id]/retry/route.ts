@@ -5,6 +5,10 @@ import { requireBaby } from "@/lib/guard";
 import { analyzeVoiceNote } from "@/lib/ai";
 import { readStoredFile } from "@/lib/storage";
 
+// The AI chain may legitimately run for minutes; without this the platform
+// default killed the function mid-chain and entries stayed "processing" forever.
+export const maxDuration = 300;
+
 export async function POST(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
