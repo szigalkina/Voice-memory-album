@@ -310,3 +310,22 @@ No direct printing-service API integration — deliberate (none worth coupling t
 3. No offline queue for recordings (upload fails on dead connection = note lost).
 4. recordedAt not editable (roadmap ACTION 7 item).
 5. Multiple babies per account unsupported (v2).
+
+## DONE 2026-07-20: Multi-album accounts, editable title, GitHub, support
+
+- Accounts hold MANY albums: /api/albums (GET list+counts+email, POST create),
+  /api/albums/active (switch; vba_album cookie), guard resolves active album.
+  Account page (/account): album list with open-now marker, new-album link,
+  support form, privacy + sign out. Nav has three tabs now.
+- Editable cover title: babies.title column; tap the album title → inline edit →
+  PATCH /api/baby {title}; empty resets to default "the first year of <name>".
+  Flows through album header, shared page, and PDF cover.
+- Support form on /account → POST /api/support: Resend email to the owner when
+  RESEND_API_KEY set, else 501 and the client opens a prefilled mailto to
+  szigalkina@gmail.com. Rate limited.
+- Code pushed to https://github.com/szigalkina/Voice-baby-album (origin/main);
+  README rewritten for the current product. Push future commits with `git push`.
+- Albelli question answered definitively: no PDF intake, editor-only by design —
+  use Blurb/PrestoPhoto/Mixam for the pages file (see 2026-07-19 export entry).
+- Known nit: album list order is query-order; add ORDER BY created/name if users
+  notice instability in which album is default-active without a cookie.
