@@ -246,3 +246,42 @@ runtime behavior (thinking) without a rename — cap thinking explicitly in ever
 request; always set maxDuration on routes that await AI; never let a status
 machine depend on a function surviving to update it without a stale-state
 fallback in the UI.
+
+## 2026-07-20 (late evening) — Owner bug batch: photos, sheet scroll, tone, album management
+
+Owner reported from her phone (deployed 9c3ef18):
+1. PHOTO UPLOADS BROKEN on iPhone: Safari showed "The string did not match the
+   expected pattern." ROOT CAUSE (reproduced with a 6MB upload against prod):
+   Vercel rejects function request bodies over ~4.5MB with a PLAIN-TEXT 413
+   (FUNCTION_PAYLOAD_TOO_LARGE); res.json() on that page throws, and Safari's
+   message for it is that cryptic string. Modern iPhone photos exceed 4.5MB.
+   FIX in PhotoUploader: browser-side downscale (createImageBitmap → canvas →
+   JPEG, longest edge 2560px ≈ 300dpi on the 21cm page, quality 0.85 then 0.6
+   until ≤4MB), ONE photo per request (several shrunk photos together can
+   still exceed the cap), res.json() parsed defensively with honest error
+   copy. Verified: injected 5000×4000 image in the browser → stored file is
+   2560×2048/685KB. NOTE the photos route comment "original resolution
+   preserved" no longer holds — 2560px is the new ceiling, chosen for print.
+2. EDIT SHEET bottom (save/cancel/delete) unreachable on the phone: 88vh
+   ignores the URL bar. FIX: max-h-[85dvh] + safe-area bottom padding +
+   overscroll-contain. Verified by measurement (save fully inside viewport
+   after scroll).
+3. AI summaries too poetic (owner wants archival). PROMPT summary rule
+   rewritten: plain concrete caption "who did what, where", with a good/bad
+   example pair baked into the prompt. Verify tone on next real notes; tune
+   further if she still finds it flowery.
+4. NEW album management (owner request): /api/albums/[id] PATCH (rename,
+   re-date) + DELETE (creator-only; deletes stored audio+photo files, photos,
+   entries — entries.babyId has NO cascade, order matters — members, invites,
+   baby row, clears vba_album cookie if it pointed there). AccountClient: each
+   album card has an "edit" affordance → inline editor (name, "when it
+   begins", delete-with-confirm incl. memory count). Verified via local API
+   round-trip (create→patch→delete, 401 without session) and browser.
+
+Operational notes: the free-tier Gemini key hit 429s late tonight after heavy
+incident debugging (probes + E2E runs) — transient, but remember the daily
+free quota is finite when testing with real audio; each on-demand /api/health
+hit during an outage also emails the owner (1/hr cooldown). Owner's "Summer
+2026" album is on her REAL account (test account has "Mila" + "Sardinia,
+summer 2027"), so healed-but-failed notes there can only be retried by her
+tapping "try again" — the button now works in seconds.
