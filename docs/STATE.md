@@ -199,3 +199,50 @@ health green):
 - /api/health (db + real text-only AI ping + storage) + vercel.json daily cron
   at 07:00 UTC → email on failure. LESSON: never trust rolling model aliases
   in prod; pin + chain + alert.
+
+## 2026-07-20 (incident #2, same day) — Voice notes stall again; deeper fix
+
+SYMPTOM: owner's screenshot ~21:18 local — entry stuck on "listening to your
+note…" forever. Health said ai:ok (text ping is not the audio path).
+
+ROOT CAUSE (three layers, all verified by measurement):
+1. gemini-3-flash-preview started running heavy THINKING on our audio+schema
+   shape: 42s for a 4-second clip (response carries thoughtSignature). On July
+   17 the same call took seconds. Adding generationConfig.thinkingConfig
+   { thinkingLevel: "low" } restores 2–8s (measured repeatedly).
+2. The whole fallback chain was dead that evening: gemini-flash-lite-latest and
+   gemini-flash-latest 404'd (instant, EMPTY bodies) on v1beta, though they
+   still appear in the models list; gemini-2.5-flash 404s "no longer available
+   to new users"; gemini-3.5-flash / 3.1-flash-lite 404 empty on v1beta but
+   answer on v1alpha (503 high demand at the time). Google's API was flapping —
+   an hour later a -latest alias served a request again. Nothing is stable
+   except the pinned preview model, and even that has latency spikes.
+3. Entries/retry routes had NO maxDuration, so the platform killed slow
+   functions mid-chain BEFORE the catch could set status='failed' → entries
+   stuck in 'processing' forever, spinner card has no retry → owner sees a
+   zombie note. 3 such rows existed (12:06Z, 12:43Z, 14:19Z); healed by direct
+   UPDATE to 'failed' (audio intact, retry works).
+
+FIXES (deployed db62bd1; prod E2E verified: real audio POST → ready in 3.5s and
+15s on consecutive runs; test entries deleted after):
+- lib/ai.ts: geminiRequestBody() with thinkingConfig thinkingLevel=low + one
+  plain retry per model if a 400 blames thinkingConfig; MODEL_CHAIN entries are
+  {model, api} (v1alpha gemini-3.5-flash added as last resort); 45s per-attempt
+  timeout; 200s TOTAL budget so the route always survives to mark failure.
+- entries + retry routes: export const maxDuration = 300.
+- EntryCard: 'processing' older than 5 min (lib/stale.ts, unit-tested) renders
+  the failed/recovery card (retry + delete) instead of the eternal spinner.
+- JournalClient: polls /api/entries every 15s while anything is processing
+  (covers Safari killing slow uploads — server finishes, client catches up);
+  on upload error it re-pulls the list before showing an error (the note often
+  actually made it).
+- Tests 17 → 24. Dev-only oddity (do not chase in prod): through `next dev`
+  the same Gemini call ran 45–60s while direct Node fetch took 5–10s —
+  dev fetch patching artifact; prod measured fast.
+
+LESSONS: health text ping ≠ audio path (a full audio canary would need stored
+sample audio — deliberately not built yet); Google can change a PINNED model's
+runtime behavior (thinking) without a rename — cap thinking explicitly in every
+request; always set maxDuration on routes that await AI; never let a status
+machine depend on a function surviving to update it without a stale-state
+fallback in the UI.
