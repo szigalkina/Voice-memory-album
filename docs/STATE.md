@@ -144,3 +144,21 @@ the new-name URL properly: Vercel dashboard → voice-baby-album → Settings �
 Domains → add `voice-memory-album.vercel.app` (project domains are public and
 auto-update). Real long-term answer: a custom domain. Historical docs under
 docs/superpowers keep the old name on purpose.
+
+## 2026-07-20 (evening) — Full rename executed; one dashboard step remains
+
+- GitHub repo RENAMED: github.com/szigalkina/Voice-memory-album (old URL
+  auto-redirects; local remote updated by gh).
+- Vercel project RENAMED to `voice-memory-album` (project ID unchanged, env/
+  integrations intact). BUT the production domain is still
+  voice-baby-album.vercel.app — vercel.app subdomains can't be added/edited via
+  CLI ("not valid") and deployment aliases hit SSO protection. OWNER ACTION:
+  dashboard → voice-memory-album project → Settings → Domains → edit/add
+  `voice-memory-album.vercel.app`. AFTER that: set APP_URL env to the new URL,
+  redeploy, verify old links (redirect or re-add old domain), update README Live
+  URL. Until then APP_URL stays https://voice-baby-album.vercel.app (was briefly
+  flipped and reverted — share/reset links must always match the serving domain).
+- RESEND_API_KEY (sending-only key) set in production; live support-form email
+  verified delivered to the owner. Sender = onboarding@resend.dev default;
+  RESEND_FROM can switch to a verified domain later (key can't list domains, so
+  unknown whether her Resend account has one — ask her).
