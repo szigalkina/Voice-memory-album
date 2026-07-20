@@ -162,3 +162,11 @@ docs/superpowers keep the old name on purpose.
   verified delivered to the owner. Sender = onboarding@resend.dev default;
   RESEND_FROM can switch to a verified domain later (key can't list domains, so
   unknown whether her Resend account has one — ask her).
+
+## 2026-07-20 (final) — Rename COMPLETE
+
+Owner flipped the domain in the dashboard (chose Redirect). Now:
+- Canonical: **https://voice-memory-album.vercel.app** (APP_URL updated, redeployed)
+- Old voice-baby-album.vercel.app → 307 redirect to new, forever. Nothing broke.
+- GitHub: github.com/szigalkina/Voice-memory-album. Vercel project: voice-memory-album.
+Rename is done everywhere. Only docs/superpowers historical files keep the old name.

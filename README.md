@@ -2,7 +2,7 @@
 
 The moments you love, told in your own voice.
 
-**Live:** https://voice-baby-album.vercel.app
+**Live:** https://voice-memory-album.vercel.app
 
 A mobile-first web app: tap one button, talk about your baby's day — or any moment
 worth keeping — in any language,
