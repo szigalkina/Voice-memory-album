@@ -27,6 +27,12 @@ export async function POST(
     const mime = file.contentType;
     try {
       const a = await analyzeVoiceNote(buf, mime);
+      if (!a.has_speech || !a.transcript.trim()) {
+        return NextResponse.json(
+          { error: "We couldn't hear any words in this recording — you can delete it." },
+          { status: 422 }
+        );
+      }
       const [ready] = await db
         .update(entries)
         .set({

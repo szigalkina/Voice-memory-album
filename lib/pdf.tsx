@@ -25,7 +25,8 @@ const PAPER = "#f7f4ee";
 const s = StyleSheet.create({
   page: { backgroundColor: PAPER, paddingTop: 48, paddingHorizontal: 48, paddingBottom: 64, flexDirection: "column" },
   month: { fontFamily: "Helvetica", fontSize: 7, letterSpacing: 2.2, color: SOFT, textAlign: "center", marginBottom: 14 },
-  title: { fontFamily: "Cormorant", fontStyle: "italic", fontSize: 26, color: INK, textAlign: "center" },
+  // Photo pages are photo-first: the title is a small caption (owner 2026-07-22).
+  title: { fontFamily: "Cormorant", fontStyle: "italic", fontSize: 16, color: INK, textAlign: "center" },
   message: { fontFamily: "Marck", fontSize: 15, color: SOFT, textAlign: "center", marginTop: 8, lineHeight: 1.45 },
   messageBig: { fontFamily: "Marck", fontSize: 18, color: SOFT, textAlign: "center", lineHeight: 1.55 },
   titleBig: { fontFamily: "Cormorant", fontStyle: "italic", fontSize: 32, color: INK, textAlign: "center", marginBottom: 12 },
@@ -52,7 +53,7 @@ export interface PdfPageData {
 }
 
 function PhotoBlock({ images }: { images: string[] }) {
-  const size = images.length === 1 ? 290 : images.length === 2 ? 200 : 170;
+  const size = images.length === 1 ? 350 : images.length === 2 ? 220 : 195;
   return (
     <View style={s.grid}>
       {images.map((src, i) => (
@@ -103,10 +104,9 @@ export function AlbumPdf({
             )}
             {images.length > 0 ? (
               <>
-                {/* Clamped like the app page — unclamped text pushed the
-                    fixed-size photo block into the date zone. */}
+                {/* Photo-first page: caption title only, no summary — it
+                    lives on photoless pages and in the app journal. */}
                 <Text style={[s.title, { maxLines: 2 }]}>{entry.title}</Text>
-                <Text style={[s.message, { maxLines: 4 }]}>{entry.summary}</Text>
                 {entry.isMilestone && <Text style={s.milestone}>— MILESTONE —</Text>}
                 <View style={{ flex: 1, justifyContent: "center" }}>
                   <PhotoBlock images={images} />

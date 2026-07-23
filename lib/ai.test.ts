@@ -13,7 +13,7 @@ const good = {
 
 describe("parseAnalysis", () => {
   it("accepts a complete valid object", () => {
-    expect(parseAnalysis(good)).toEqual(good);
+    expect(parseAnalysis(good)).toEqual({ ...good, has_speech: true });
   });
   it("coerces missing optional fields to null and booleans to false", () => {
     const r = parseAnalysis({ transcript: "hi", title: "Hi", summary: "s" });
@@ -21,11 +21,19 @@ describe("parseAnalysis", () => {
     expect(r.is_milestone).toBe(false);
     expect(r.milestone_type).toBeNull();
     expect(r.photo_prompt).toBeNull();
+    expect(r.has_speech).toBe(true);
   });
   it("throws on missing required fields", () => {
     expect(() => parseAnalysis({ title: "no transcript" })).toThrow();
     expect(() => parseAnalysis(null)).toThrow();
     expect(() => parseAnalysis("string")).toThrow();
+  });
+  it("silent audio yields an explicit empty analysis, never invented content", () => {
+    const r = parseAnalysis({ has_speech: false, transcript: "", title: "", summary: "" });
+    expect(r.has_speech).toBe(false);
+    expect(r.transcript).toBe("");
+    expect(r.title).toBe("");
+    expect(r.is_milestone).toBe(false);
   });
 });
 

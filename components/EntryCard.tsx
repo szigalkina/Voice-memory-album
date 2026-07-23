@@ -40,6 +40,7 @@ export default function EntryCard({
 }) {
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
 
   async function patch(body: Record<string, unknown>) {
     setBusy(true);
@@ -64,10 +65,12 @@ export default function EntryCard({
 
   async function retry() {
     setBusy(true);
+    setRetryError(null);
     try {
       const res = await fetch(`/api/entries/${entry.id}/retry`, { method: "POST" });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       if (res.ok) onChange({ ...entry, ...data.entry });
+      else setRetryError(data?.error ?? "Couldn't process this note, try again later");
     } finally {
       setBusy(false);
     }
@@ -109,6 +112,7 @@ export default function EntryCard({
             delete
           </button>
         </div>
+        {retryError && <p className="mt-3 text-sm text-umber">{retryError}</p>}
       </div>
     );
   }
@@ -182,14 +186,9 @@ export default function EntryCard({
         </div>
       )}
 
-      <div className="mt-5 flex items-center justify-between gap-3 border-t border-hairline pt-4">
-        {entry.photos.length === 0 && entry.photoPrompt ? (
-          <p className="text-xs text-ink-soft truncate italic font-display text-[15px]">
-            {entry.photoPrompt}
-          </p>
-        ) : (
-          <span />
-        )}
+      {/* One set of quiet label-caps controls — the italic AI photo-prompt
+          line read as a cheap duplicate of "add a photo" (owner 2026-07-22). */}
+      <div className="mt-5 flex items-center justify-end gap-3 border-t border-hairline pt-4">
         <div className="flex items-center gap-4 shrink-0">
           <PhotoUploader
             entryId={entry.id}

@@ -6,6 +6,10 @@ export interface EntryAnalysis {
   is_milestone: boolean;
   milestone_type: string | null;
   photo_prompt: string | null;
+  // False when the audio held no intelligible words — the model must say so
+  // instead of inventing a memory (it once fabricated an entire "first swim"
+  // from a silent accidental recording).
+  has_speech: boolean;
 }
 
 export function parseAnalysis(raw: unknown): EntryAnalysis {
@@ -13,6 +17,18 @@ export function parseAnalysis(raw: unknown): EntryAnalysis {
     throw new Error("AI response is not an object");
   }
   const o = raw as Record<string, unknown>;
+  if (o.has_speech === false) {
+    return {
+      transcript: "",
+      title: "",
+      summary: "",
+      quote: null,
+      is_milestone: false,
+      milestone_type: null,
+      photo_prompt: null,
+      has_speech: false,
+    };
+  }
   for (const k of ["transcript", "title", "summary"]) {
     if (typeof o[k] !== "string" || !o[k]) throw new Error(`AI response missing ${k}`);
   }
@@ -25,6 +41,7 @@ export function parseAnalysis(raw: unknown): EntryAnalysis {
     is_milestone: o.is_milestone === true,
     milestone_type: str("milestone_type"),
     photo_prompt: str("photo_prompt"),
+    has_speech: true,
   };
 }
 
@@ -39,6 +56,7 @@ export function mockAnalysis(): EntryAnalysis {
     is_milestone: true,
     milestone_type: "first_laugh",
     photo_prompt: "did you catch that giggle on camera? add a photo of this moment",
+    has_speech: true,
   };
 }
 
@@ -46,6 +64,11 @@ const PROMPT = `You are the gentle assistant inside a memory-album app. Someone 
 - Write title, summary, quote and photo_prompt in the SAME LANGUAGE the parent spoke.
 - Voice: quiet, tender, editorial. Never use exclamation marks, emoji, or emphatic
   words like "amazing"/"incredible". Understatement over enthusiasm.
+- has_speech: true ONLY if you can hear real spoken words. For silence, noise,
+  breathing, or anything you cannot confidently make out: has_speech = false,
+  transcript = "", title = "", summary = "", everything else null/false.
+  NEVER invent, guess, or embellish content that was not clearly spoken —
+  an invented memory in a family album is worse than no entry at all.
 - transcript: faithful transcription of the audio.
 - title: short warm title (max 6 words).
 - summary: 1-2 short sentences for the album's record, plain and concrete like
@@ -61,6 +84,7 @@ const PROMPT = `You are the gentle assistant inside a memory-album app. Someone 
 const SCHEMA = {
   type: "OBJECT",
   properties: {
+    has_speech: { type: "BOOLEAN" },
     transcript: { type: "STRING" },
     title: { type: "STRING" },
     summary: { type: "STRING" },
@@ -69,7 +93,7 @@ const SCHEMA = {
     milestone_type: { type: "STRING", nullable: true },
     photo_prompt: { type: "STRING", nullable: true },
   },
-  required: ["transcript", "title", "summary", "is_milestone"],
+  required: ["has_speech", "transcript", "title", "summary", "is_milestone"],
 };
 
 // Models are tried in order until one answers. Rolling aliases have silently

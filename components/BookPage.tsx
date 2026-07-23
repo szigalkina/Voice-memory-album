@@ -34,14 +34,14 @@ function Print({ photo, className = "" }: { photo: Photo; className?: string }) 
 function PhotoGrid({ photos }: { photos: Photo[] }) {
   if (photos.length === 1) {
     return (
-      <div className="mx-auto w-[min(62%,98cqh)]">
+      <div className="mx-auto w-[min(78%,98cqh)]">
         <Print photo={photos[0]} className="aspect-square" />
       </div>
     );
   }
   if (photos.length === 2) {
     return (
-      <div className="grid grid-cols-2 gap-2.5 w-[min(88%,196cqh)] mx-auto">
+      <div className="grid grid-cols-2 gap-2.5 w-[min(92%,196cqh)] mx-auto">
         {photos.map((p) => (
           <Print key={p.id} photo={p} className="aspect-square" />
         ))}
@@ -49,7 +49,7 @@ function PhotoGrid({ photos }: { photos: Photo[] }) {
     );
   }
   return (
-    <div className="grid grid-cols-2 gap-2 w-[min(64%,94cqh)] mx-auto">
+    <div className="grid grid-cols-2 gap-2 w-[min(78%,94cqh)] mx-auto">
       {photos.slice(0, 4).map((p, i) => (
         <Print
           key={p.id}
@@ -96,7 +96,12 @@ export default function BookPage({
 
       {onEdit && (
         <button
-          onClick={onEdit}
+          onClick={(e) => {
+            // the whole page is tappable (fullscreen view) — edit must not
+            // trigger that too
+            e.stopPropagation();
+            onEdit();
+          }}
           aria-label="Edit this page"
           className="absolute top-3 right-3 z-10 label-caps !text-[9px] text-ink-soft underline underline-offset-4"
         >
@@ -112,19 +117,13 @@ export default function BookPage({
 
       {photos.length > 0 ? (
         <div className={`flex-1 flex flex-col px-6 ${page.monthLabel ? "pt-3" : "pt-8"} pb-16`}>
-          <div className="text-center mb-4">
-            {/* Tight clamps on photo pages: every text line steals height
-                from the photos, and the date zone below is non-negotiable. */}
-            <h3 className="font-display italic text-[24px] leading-tight line-clamp-2">{entry.title}</h3>
-            <p
-              className={`font-hand text-[17px] leading-snug text-ink/75 mt-1.5 ${
-                photos.length > 2 ? "line-clamp-2" : "line-clamp-3"
-              }`}
-            >
-              {entry.summary}
-            </p>
+          {/* Photo pages are photo-first (owner 2026-07-22): only the
+              highlight — a small caption title — and the images. The full
+              message lives in the journal and on photoless pages. */}
+          <div className="text-center mb-3">
+            <h3 className="font-display italic text-[18px] leading-tight line-clamp-2">{entry.title}</h3>
             {entry.isMilestone && (
-              <div className="mt-1.5">
+              <div className="mt-1">
                 <Milestone />
               </div>
             )}

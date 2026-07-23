@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { desc, eq, inArray } from "drizzle-orm";
 import { entries, photos } from "@/lib/schema";
 import { requireBaby } from "@/lib/guard";
-import { saveFile } from "@/lib/storage";
+import { deleteStoredFile, saveFile } from "@/lib/storage";
 import { analyzeVoiceNote } from "@/lib/ai";
 
 // The AI chain may legitimately run for minutes; without this the platform
@@ -31,6 +31,16 @@ export async function POST(req: Request) {
 
     try {
       const a = await analyzeVoiceNote(buf, mime);
+      if (!a.has_speech || !a.transcript.trim()) {
+        // Nothing was said (accidental tap, silence): keep NOTHING — a
+        // hallucinated memory in the album is far worse than no entry.
+        await db.delete(entries).where(eq(entries.id, created.id));
+        await deleteStoredFile(audioUrl);
+        return NextResponse.json(
+          { error: "We couldn't hear any words in that note, so nothing was kept. Try again a little closer to the phone?" },
+          { status: 422 }
+        );
+      }
       const [ready] = await db
         .update(entries)
         .set({

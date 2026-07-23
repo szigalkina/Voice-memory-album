@@ -7,6 +7,7 @@ import { currentMonthLabel, monthLabel, monthNumber } from "@/lib/months";
 import { buildBookPages } from "@/lib/book";
 import BookPage from "./BookPage";
 import EditEntrySheet from "./EditEntrySheet";
+import FullscreenBook from "./FullscreenBook";
 import WaveMark from "./WaveMark";
 
 function fmtDate(iso: string) {
@@ -25,6 +26,7 @@ export default function AlbumClient({ baby }: { baby: Baby }) {
   const [title, setTitle] = useState<string | null>(baby.title ?? null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/entries")
@@ -122,6 +124,23 @@ export default function AlbumClient({ baby }: { baby: Baby }) {
       }));
   }, [entries, showAll, baby.birthdate]);
 
+  // The list view can show entries the book doesn't (not in album) — build
+  // pages for exactly what's visible so tapping any entry opens full screen.
+  const listPages = useMemo(
+    () =>
+      buildBookPages(
+        listSections.flatMap((s) => s.entries),
+        baby.birthdate
+      ),
+    [listSections, baby.birthdate]
+  );
+  const viewerPages = view === "book" ? pages : listPages;
+
+  function openViewer(entryId: string) {
+    const idx = viewerPages.findIndex((p) => p.entry.id === entryId);
+    if (idx >= 0) setViewerIndex(idx);
+  }
+
   async function saveTitle() {
     setEditingTitle(false);
     const next = titleDraft.trim() || null;
@@ -201,7 +220,11 @@ export default function AlbumClient({ baby }: { baby: Baby }) {
           <div className="fade-up">
             <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-8 pb-4 no-scrollbar">
               {pages.map((page, i) => (
-                <div key={page.entry.id} className="snap-center shrink-0 w-[82%]">
+                <div
+                  key={page.entry.id}
+                  className="snap-center shrink-0 w-[82%] cursor-pointer"
+                  onClick={() => setViewerIndex(i)}
+                >
                   <BookPage
                     page={page}
                     number={i + 1}
@@ -310,7 +333,8 @@ export default function AlbumClient({ baby }: { baby: Baby }) {
                       <article
                         key={e.id}
                         style={{ animationDelay: `${Math.min(i, 6) * 60}ms` }}
-                        className={`fade-up border border-hairline bg-paper rounded-[3px] p-5 ${
+                        onClick={() => openViewer(e.id)}
+                        className={`fade-up border border-hairline bg-paper rounded-[3px] p-5 cursor-pointer ${
                           e.inAlbum ? "" : "opacity-55"
                         }`}
                       >
@@ -348,7 +372,10 @@ export default function AlbumClient({ baby }: { baby: Baby }) {
                         <div className="mt-3 flex justify-end">
                           <button
                             disabled={busyId === e.id}
-                            onClick={() => toggleAlbum(e, !e.inAlbum)}
+                            onClick={(ev) => {
+                              ev.stopPropagation();
+                              toggleAlbum(e, !e.inAlbum);
+                            }}
                             className="label-caps text-ink-soft underline underline-offset-4 disabled:opacity-40"
                           >
                             {e.inAlbum ? "remove from album" : "add to album"}
@@ -362,6 +389,14 @@ export default function AlbumClient({ baby }: { baby: Baby }) {
             </div>
           )}
         </div>
+      )}
+
+      {viewerIndex !== null && viewerPages[viewerIndex] && (
+        <FullscreenBook
+          pages={viewerPages}
+          startIndex={viewerIndex}
+          onClose={() => setViewerIndex(null)}
+        />
       )}
 
       {editing && (

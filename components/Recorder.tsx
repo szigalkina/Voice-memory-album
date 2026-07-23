@@ -25,9 +25,12 @@ export default function Recorder({
   const [state, setState] = useState<RecorderState>("idle");
   const [elapsed, setElapsed] = useState(0);
   const [promptIdx, setPromptIdx] = useState(0);
+  const [hint, setHint] = useState<string | null>(null);
   const [levels, setLevels] = useState<number[]>(() => Array(BAR_COUNT).fill(4));
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const startedAtRef = useRef(0);
+  const discardRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -110,10 +113,22 @@ export default function Recorder({
         const blob = new Blob(chunksRef.current, { type });
         setState("idle");
         setPromptIdx((i) => (i + 1) % PROMPTS.length);
-        if (blob.size > 0) onRecorded(blob, type.split(";")[0]);
+        // Changed your mind, or a slip of a tap? Nothing gets uploaded —
+        // accidental near-empty audio once became an invented AI memory.
+        if (discardRef.current) {
+          discardRef.current = false;
+          setHint("discarded — nothing was saved");
+        } else if (Date.now() - startedAtRef.current < 2000) {
+          setHint("that was too quick to keep — tap, then tell the moment");
+        } else if (blob.size > 0) {
+          onRecorded(blob, type.split(";")[0]);
+        }
       };
       recorderRef.current = rec;
       rec.start();
+      discardRef.current = false;
+      startedAtRef.current = Date.now();
+      setHint(null);
       setElapsed(0);
       timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
       startMeter(stream);
@@ -126,6 +141,11 @@ export default function Recorder({
   function stop() {
     if (timerRef.current) clearInterval(timerRef.current);
     recorderRef.current?.stop();
+  }
+
+  function discard() {
+    discardRef.current = true;
+    stop();
   }
 
   // Notes longer than 5 minutes exceed what the AI accepts in one request.
@@ -188,15 +208,23 @@ export default function Recorder({
           ))
         ) : (
           <span className="font-display italic text-[19px] text-ink-soft text-center px-6">
-            {uploading ? "listening to your note…" : PROMPTS[promptIdx]}
+            {uploading ? "listening to your note…" : hint ?? PROMPTS[promptIdx]}
           </span>
         )}
       </div>
 
       {state === "recording" && (
-        <p className="label-caps text-ink -mt-2">
-          {mm}:{ss} · tap to finish
-        </p>
+        <>
+          <p className="label-caps text-ink -mt-2">
+            {mm}:{ss} · tap to finish
+          </p>
+          <button
+            onClick={discard}
+            className="label-caps !text-[10px] text-ink-soft underline underline-offset-4 -mt-1"
+          >
+            discard
+          </button>
+        </>
       )}
 
       {state === "denied" && (
